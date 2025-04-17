@@ -20,8 +20,10 @@ steps:
       echo "==> Install yum-utils"
       yum install -y yum-utils
 
-      echo "==> Manually install centos-release-scl.rpm"
-      curl -L -o /tmp/centos-release-scl.rpm http://mirror.centos.org/centos/7/os/x86_64/Packages/centos-release-scl-2-3.el7.centos.noarch.rpm
+      echo "==> Download centos-release-scl.rpm from Oracle mirror"
+      curl -L -o /tmp/centos-release-scl.rpm https://yum.oracle.com/repo/OracleLinux/OL7/developer/x86_64/getPackage/centos-release-scl-2-3.el7.centos.noarch.rpm
+
+      echo "==> Install centos-release-scl.rpm"
       rpm -i /tmp/centos-release-scl.rpm
 
       echo "==> Installing devtoolset-11"
@@ -35,6 +37,7 @@ steps:
       tar -xf /tmp/node.tar.xz -C ${NODE_PREFIX} --strip-components=1
       ln -sf ${NODE_PREFIX}/bin/* /usr/local/bin/
       node -v
+
 
   # 2) 애플리케이션 의존성 설치
   - type: Command
