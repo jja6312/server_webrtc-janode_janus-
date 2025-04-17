@@ -38,10 +38,13 @@ steps:
         nice-devel
 
   - type: Command
-    name: "Install Node.js dependencies"
+    name: "Install Node.js dependencies with modern gcc"
     command: |
+      yum install -y centos-release-scl
+      yum install -y devtoolset-11
+      source /opt/rh/devtoolset-11/enable
       cd media_app/janode
-      npm install express cors http path dotenv mysql2
+      npm install
 
   - type: Command
     name: "Create deployment package"
