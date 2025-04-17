@@ -7,72 +7,57 @@ shell: bash
 env:
   variables:
     APP_NAME: "nodejs-janus-app"
-    NODE_VERSION: "18"
+    NODE_VERSION: "18.19.0"
+    NODE_PREFIX: "/usr/local/node"          # 전역 설치 위치
 
 steps:
+  # 1) 공용 이미지 세팅 ‑ Node 18 + 최신 gcc
   - type: Command
-    name: "Install dependencies and Node.js 18"
+    name: "Prepare build toolchain"
     command: |
-      echo "==> Installing build dependencies"
-      yum install -y curl tar xz yum-utils
-
-      echo "==> Installing modern gcc (devtoolset-11)"
-      yum install -y centos-release-scl
+      set -e
+      echo "==> Enable OL7 developer repos & install devtoolset‑11"
+      yum install -y oracle‑linux‑developer‑release‑el7
+      yum-config-manager --enable ol7_developer
       yum install -y devtoolset-11
 
-      echo "==> Manually downloading and extracting Node.js 18"
-      curl -O https://nodejs.org/dist/v18.19.0/node-v18.19.0-linux-x64.tar.xz
-      tar -xf node-v18.19.0-linux-x64.tar.xz
+      echo "==> Install Node ${NODE_VERSION}"
+      curl -fsSL https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-linux-x64.tar.xz -o /tmp/node.tar.xz
+      mkdir -p ${NODE_PREFIX}
+      tar -xf /tmp/node.tar.xz -C ${NODE_PREFIX} --strip-components=1
+      ln -sf ${NODE_PREFIX}/bin/* /usr/local/bin/        # 다음 스텝에서도 그대로 사용 가능
 
-      echo "==> Exporting Node.js 18 path"
-      export PATH=$PWD/node-v18.19.0-linux-x64/bin:$PATH
-
-      echo "==> Verifying Node.js version"
-      node -v
-      npm -v
-
-      echo "==> Installing Janus build dependencies"
-      yum install -y \
-        libmicrohttpd-devel \
-        jansson-devel \
-        openssl-devel \
-        libsrtp-devel \
-        sofia-sip-devel \
-        glib2-devel \
-        opus-devel \
-        libogg-devel \
-        libcurl-devel \
-        lua-devel \
-        libconfig-devel \
-        pkgconfig \
-        gengetopt \
-        libtool \
-        automake \
-        make \
-        gcc \
-        gcc-c++ \
-        mysql-devel \
-        nice-devel
-
+  # 2) 애플리케이션 의존성 설치 (devtoolset‑11 활성화)
   - type: Command
-    name: "Install Node.js project dependencies with modern gcc"
+    name: "Install OS libs & build Node modules"
     command: |
-      echo "==> Enabling devtoolset-11 (modern gcc)"
+      set -e
+      # 최신 gcc 활성화
       source /opt/rh/devtoolset-11/enable
-      export PATH=$PWD/node-v18.19.0-linux-x64/bin:$PATH
+      export CC=gcc CXX=g++
+      echo "==> gcc version: $(gcc -v 2>&1 | tail -1)"
+      echo "==> node version: $(node -v)"
 
-      echo "==> Installing Node.js dependencies"
+      echo "==> Janus/Janode native deps"
+      yum install -y \
+        libmicrohttpd-devel jansson-devel openssl-devel libsrtp-devel \
+        sofia-sip-devel glib2-devel opus-devel libogg-devel libcurl-devel \
+        lua-devel libconfig-devel pkgconfig gengetopt libtool automake \
+        make gcc gcc-c++ mysql-devel nice-devel
+
+      echo "==> npm install"
       cd media_app/janode
-      npm install
+      npm ci                       # reproducible build
 
+  # 3) 배포 아티팩트 패키징
   - type: Command
-    name: "Create deployment package"
+    name: "Package artifact"
     command: |
-      echo "==> Creating deployment artifact"
+      set -e
       mkdir -p ${OCI_WORKSPACE_DIR}/deployment
       cp -r media_app ${OCI_WORKSPACE_DIR}/deployment/
       cd ${OCI_WORKSPACE_DIR}/deployment
-      tar -czvf nodejs-janus-app.tar.gz media_app
+      tar -czf nodejs-janus-app.tar.gz media_app
 
 outputArtifacts:
   - name: nodejs-janus-app-artifact
