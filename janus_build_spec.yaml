@@ -11,11 +11,27 @@ env:
 
 steps:
   - type: Command
-    name: "Install dependencies"
+    name: "Install dependencies and Node.js 18"
     command: |
-      yum install -y curl
-      curl -fsSL https://rpm.nodesource.com/setup_18.x | bash -
-      yum install -y nodejs
+      echo "==> Installing build dependencies"
+      yum install -y curl tar xz yum-utils
+
+      echo "==> Installing modern gcc (devtoolset-11)"
+      yum install -y centos-release-scl
+      yum install -y devtoolset-11
+
+      echo "==> Manually downloading and extracting Node.js 18"
+      curl -O https://nodejs.org/dist/v18.19.0/node-v18.19.0-linux-x64.tar.xz
+      tar -xf node-v18.19.0-linux-x64.tar.xz
+
+      echo "==> Exporting Node.js 18 path"
+      export PATH=$PWD/node-v18.19.0-linux-x64/bin:$PATH
+
+      echo "==> Verifying Node.js version"
+      node -v
+      npm -v
+
+      echo "==> Installing Janus build dependencies"
       yum install -y \
         libmicrohttpd-devel \
         jansson-devel \
@@ -34,21 +50,25 @@ steps:
         automake \
         make \
         gcc \
+        gcc-c++ \
         mysql-devel \
         nice-devel
 
   - type: Command
-    name: "Install Node.js dependencies with modern gcc"
+    name: "Install Node.js project dependencies with modern gcc"
     command: |
-      yum install -y centos-release-scl
-      yum install -y devtoolset-11
+      echo "==> Enabling devtoolset-11 (modern gcc)"
       source /opt/rh/devtoolset-11/enable
+      export PATH=$PWD/node-v18.19.0-linux-x64/bin:$PATH
+
+      echo "==> Installing Node.js dependencies"
       cd media_app/janode
       npm install
 
   - type: Command
     name: "Create deployment package"
     command: |
+      echo "==> Creating deployment artifact"
       mkdir -p ${OCI_WORKSPACE_DIR}/deployment
       cp -r media_app ${OCI_WORKSPACE_DIR}/deployment/
       cd ${OCI_WORKSPACE_DIR}/deployment
@@ -58,4 +78,3 @@ outputArtifacts:
   - name: nodejs-janus-app-artifact
     type: BINARY
     location: ${OCI_WORKSPACE_DIR}/deployment/nodejs-janus-app.tar.gz
-
