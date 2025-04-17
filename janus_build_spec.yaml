@@ -17,14 +17,13 @@ steps:
     command: |
       set -euxo pipefail
 
-      echo "==> Enable Oracle repos"
-      yum install -y yum-utils oraclelinux-release-el7
-      yum-config-manager --enable ol7_software_collections
-      yum-config-manager --enable ol7_optional_latest
+      echo "==> Enable required Oracle repos"
+      yum install -y yum-utils oraclelinux-developer-release-el7
+      yum-config-manager --enable ol7_developer ol7_optional_latest ol7_software_collections
 
-      echo "==> Install gcc-toolset-9"
-      yum install -y gcc-toolset-9 gcc-toolset-9-gcc gcc-toolset-9-gcc-c++
-      source /opt/rh/gcc-toolset-9/enable
+      echo "==> Install devtoolset-8 (GCC 8.3)"
+      yum install -y devtoolset-8 devtoolset-8-gcc devtoolset-8-gcc-c++
+      source /opt/rh/devtoolset-8/enable
 
       echo "==> Confirm GCC version"
       gcc -v
@@ -35,6 +34,7 @@ steps:
       tar -xf /tmp/node.tar.xz -C ${NODE_PREFIX} --strip-components=1
       ln -sf ${NODE_PREFIX}/bin/* /usr/local/bin/
       node -v
+
 
 
 
