@@ -17,26 +17,25 @@ steps:
     command: |
       set -euxo pipefail
 
-      echo "==> Install yum-utils"
-      yum install -y yum-utils
+      echo "==> Enable Oracle repos"
+      yum install -y yum-utils oraclelinux-release-el7
+      yum-config-manager --enable ol7_software_collections
+      yum-config-manager --enable ol7_optional_latest
 
-      echo "==> Download centos-release-scl.rpm from Oracle mirror"
-      curl -L -o /tmp/centos-release-scl.rpm https://yum.oracle.com/repo/OracleLinux/OL7/developer/x86_64/getPackage/centos-release-scl-2-3.el7.centos.noarch.rpm
+      echo "==> Install gcc-toolset-9"
+      yum install -y gcc-toolset-9 gcc-toolset-9-gcc gcc-toolset-9-gcc-c++
+      source /opt/rh/gcc-toolset-9/enable
 
-      echo "==> Install centos-release-scl.rpm"
-      rpm -i /tmp/centos-release-scl.rpm
-
-      echo "==> Installing devtoolset-11"
-      yum install -y devtoolset-11 devtoolset-11-gcc devtoolset-11-gcc-c++
-      source /opt/rh/devtoolset-11/enable
+      echo "==> Confirm GCC version"
       gcc -v
 
-      echo "==> Installing Node.js $NODE_VERSION"
+      echo "==> Install Node.js $NODE_VERSION"
       curl -fsSL https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-linux-x64.tar.xz -o /tmp/node.tar.xz
       mkdir -p ${NODE_PREFIX}
       tar -xf /tmp/node.tar.xz -C ${NODE_PREFIX} --strip-components=1
       ln -sf ${NODE_PREFIX}/bin/* /usr/local/bin/
       node -v
+
 
 
   # 2) 애플리케이션 의존성 설치
