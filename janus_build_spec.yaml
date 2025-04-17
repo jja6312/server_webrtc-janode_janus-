@@ -16,16 +16,25 @@ steps:
     name: "Prepare build toolchain"
     command: |
       set -e
-      echo "==> Enable OL7 developer repos & install devtoolset‑11"
-      yum install -y oracle‑linux‑developer‑release‑el7
-      yum-config-manager --enable ol7_developer
-      yum install -y devtoolset-11
+      echo "==> Add developer repos & install devtoolset‑11"
+      yum install -y yum-utils                     # yum‑config‑manager 제공
+      yum install -y oraclelinux-developer-release-el7
 
-      echo "==> Install Node ${NODE_VERSION}"
+      # 개발/소프트웨어컬렉션 repo 활성화
+      yum-config-manager --enable ol7_developer
+      yum-config-manager --enable ol7_software_collections
+
+      # 최신 GCC
+      yum install -y devtoolset-11     # 또는 gcc-toolset-11
+      source /opt/rh/devtoolset-11/enable
+      echo "gcc version: $(gcc -v 2>&1 | tail -1)"
+
+      echo "==> Install Node ${NODE_VERSION}"
       curl -fsSL https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-linux-x64.tar.xz -o /tmp/node.tar.xz
       mkdir -p ${NODE_PREFIX}
       tar -xf /tmp/node.tar.xz -C ${NODE_PREFIX} --strip-components=1
-      ln -sf ${NODE_PREFIX}/bin/* /usr/local/bin/        # 다음 스텝에서도 그대로 사용 가능
+      ln -sf ${NODE_PREFIX}/bin/* /usr/local/bin/
+
 
   # 2) 애플리케이션 의존성 설치 (devtoolset‑11 활성화)
   - type: Command
