@@ -1,0 +1,58 @@
+on: 0.1
+component: build
+timeoutInSeconds: 6000
+runAs: root
+shell: bash
+
+env:
+  variables:
+    APP_NAME: "nodejs-janus-app"
+    NODE_VERSION: "18"
+
+steps:
+  - type: Command
+    name: "Install dependencies"
+    command: |
+      yum install -y curl
+      curl -fsSL https://rpm.nodesource.com/setup_18.x | bash -
+      yum install -y nodejs
+      yum install -y \
+        libmicrohttpd-devel \
+        jansson-devel \
+        openssl-devel \
+        libsrtp-devel \
+        sofia-sip-devel \
+        glib2-devel \
+        opus-devel \
+        libogg-devel \
+        libcurl-devel \
+        lua-devel \
+        libconfig-devel \
+        pkgconfig \
+        gengetopt \
+        libtool \
+        automake \
+        make \
+        gcc \
+        mysql-devel \
+        nice-devel
+
+  - type: Command
+    name: "Install Node.js dependencies"
+    command: |
+      cd media_app/janode
+      npm install express cors http path dotenv mysql2
+
+  - type: Command
+    name: "Create deployment package"
+    command: |
+      mkdir -p ${OCI_WORKSPACE_DIR}/deployment
+      cp -r media_app ${OCI_WORKSPACE_DIR}/deployment/
+      cd ${OCI_WORKSPACE_DIR}/deployment
+      tar -czvf nodejs-janus-app.tar.gz media_app
+
+outputArtifacts:
+  - name: nodejs-janus-app-artifact
+    type: BINARY
+    location: ${OCI_WORKSPACE_DIR}/deployment/nodejs-janus-app.tar.gz
+
