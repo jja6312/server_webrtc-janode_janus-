@@ -8,68 +8,62 @@ env:
   variables:
     APP_NAME: "nodejs-janus-app"
     NODE_VERSION: "18.19.0"
-    NODE_PREFIX: "/usr/local/node"          # 전역 설치 위치
+    NODE_PREFIX: "/usr/local/node"
 
 steps:
-  # 1) 공용 이미지 세팅 ‑ Node 18 + 최신 gcc
+  # 1) Node 18 + devtoolset-11(gcc 11) 설치
   - type: Command
     name: "Prepare build toolchain"
     command: |
       set -euxo pipefail
 
-      echo "==> Repos & yum-utils"
-      yum install -y yum-utils oraclelinux-developer-release-el7
-      yum-config-manager --enable ol7_developer ol7_optional_latest ol7_software_collections
+      echo "==> Install yum-utils"
+      yum install -y yum-utils
 
-      echo "==> devtoolset‑10 확인"
-      if yum list available devtoolset-10\* >/dev/null 2>&1; then
-          yum install -y devtoolset-10 devtoolset-10-gcc devtoolset-10-gcc-c++
-          TOOLSET_DIR=/opt/rh/devtoolset-10
-      else
-          echo "❌ devtoolset‑10 도 없음 → CentOS SCL 로 fallback"
-          yum install -y centos-release-scl
-          yum install -y devtoolset-11 devtoolset-11-gcc devtoolset-11-gcc-c++
-          TOOLSET_DIR=/opt/rh/devtoolset-11
-      fi
+      echo "==> Manually install centos-release-scl.rpm"
+      curl -L -o /tmp/centos-release-scl.rpm http://mirror.centos.org/centos/7/os/x86_64/Packages/centos-release-scl-2-3.el7.centos.noarch.rpm
+      rpm -i /tmp/centos-release-scl.rpm
 
-      source ${TOOLSET_DIR}/enable
+      echo "==> Installing devtoolset-11"
+      yum install -y devtoolset-11 devtoolset-11-gcc devtoolset-11-gcc-c++
+      source /opt/rh/devtoolset-11/enable
       gcc -v
 
-      echo "==> Node $NODE_VERSION"
+      echo "==> Installing Node.js $NODE_VERSION"
       curl -fsSL https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-linux-x64.tar.xz -o /tmp/node.tar.xz
       mkdir -p ${NODE_PREFIX}
       tar -xf /tmp/node.tar.xz -C ${NODE_PREFIX} --strip-components=1
       ln -sf ${NODE_PREFIX}/bin/* /usr/local/bin/
       node -v
 
-
-  # 2) 애플리케이션 의존성 설치 (devtoolset‑11 활성화)
+  # 2) 애플리케이션 의존성 설치
   - type: Command
     name: "Install OS libs & build Node modules"
     command: |
-      set -e
-      # 최신 gcc 활성화
+      set -euxo pipefail
+
+      echo "==> Enable devtoolset-11"
       source /opt/rh/devtoolset-11/enable
       export CC=gcc CXX=g++
       echo "==> gcc version: $(gcc -v 2>&1 | tail -1)"
       echo "==> node version: $(node -v)"
 
-      echo "==> Janus/Janode native deps"
+      echo "==> Install Janus native dependencies"
       yum install -y \
         libmicrohttpd-devel jansson-devel openssl-devel libsrtp-devel \
         sofia-sip-devel glib2-devel opus-devel libogg-devel libcurl-devel \
         lua-devel libconfig-devel pkgconfig gengetopt libtool automake \
         make gcc gcc-c++ mysql-devel nice-devel
 
-      echo "==> npm install"
+      echo "==> Run npm install"
       cd media_app/janode
-      npm ci                       # reproducible build
+      npm ci
 
-  # 3) 배포 아티팩트 패키징
+  # 3) 배포 아티팩트 생성
   - type: Command
     name: "Package artifact"
     command: |
-      set -e
+      set -euxo pipefail
       mkdir -p ${OCI_WORKSPACE_DIR}/deployment
       cp -r media_app ${OCI_WORKSPACE_DIR}/deployment/
       cd ${OCI_WORKSPACE_DIR}/deployment
