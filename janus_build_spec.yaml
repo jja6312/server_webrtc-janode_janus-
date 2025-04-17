@@ -15,48 +15,32 @@ steps:
   - type: Command
     name: "Prepare build toolchain"
     command: |
-      # ‑e : 에러 발생 시 즉시 종료
-      # ‑x : 실행되는 모든 명령 echo
-      # ‑o pipefail : 파이프라인 일부 실패 시 전체 실패
-      set -euo pipefail
-      set -x
+      set -euxo pipefail
 
-      echo "### Step 1) yum-utils & repo 메타‑패키지"
-      yum install -y yum-utils
-      yum install -y oraclelinux-developer-release-el7 || true  # 이미 있으면 계속
+      echo "==> Repos & yum-utils"
+      yum install -y yum-utils oraclelinux-developer-release-el7
+      yum-config-manager --enable ol7_developer ol7_optional_latest ol7_software_collections
 
-      echo "### Step 2) 사용 가능한 repo 목록"
-      yum repolist all | grep -E 'developer|software_collections|optional' || true
-
-      echo "### Step 3) 개발/SCL repo enable"
-      yum-config-manager --enable ol7_developer || true
-      yum-config-manager --enable ol7_software_collections || true
-      yum-config-manager --enable ol7_optional_latest || true
-      yum clean all
-      yum makecache fast
-
-      echo "### Step 4) devtoolset 설치 2가지 경로 시도"
-      # Oracle Linux 7: 두 이름 중 하나만 존재합니다.
-      if yum list available devtoolset-11\* >/dev/null 2>&1; then
-          yum install -y devtoolset-11 devtoolset-11-gcc devtoolset-11-gcc-c++
-      elif yum list available gcc-toolset-11\* >/dev/null 2>&1; then
-          yum install -y gcc-toolset-11 gcc-toolset-11-gcc gcc-toolset-11-gcc-c++
+      echo "==> devtoolset‑10 확인"
+      if yum list available devtoolset-10\* >/dev/null 2>&1; then
+          yum install -y devtoolset-10 devtoolset-10-gcc devtoolset-10-gcc-c++
+          TOOLSET_DIR=/opt/rh/devtoolset-10
       else
-          echo "### ❌ GCC 11 패키지가 보이지 않습니다. repo enable 여부를 확인하세요."
-          exit 1
+          echo "❌ devtoolset‑10 도 없음 → CentOS SCL 로 fallback"
+          yum install -y centos-release-scl
+          yum install -y devtoolset-11 devtoolset-11-gcc devtoolset-11-gcc-c++
+          TOOLSET_DIR=/opt/rh/devtoolset-11
       fi
 
-      echo "### Step 5) gcc 확인"
-      source /opt/rh/*toolset-11*/enable
+      source ${TOOLSET_DIR}/enable
       gcc -v
 
-      echo "### Step 6) Node ${NODE_VERSION} 설치"
+      echo "==> Node $NODE_VERSION"
       curl -fsSL https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-linux-x64.tar.xz -o /tmp/node.tar.xz
       mkdir -p ${NODE_PREFIX}
       tar -xf /tmp/node.tar.xz -C ${NODE_PREFIX} --strip-components=1
       ln -sf ${NODE_PREFIX}/bin/* /usr/local/bin/
       node -v
-
 
 
   # 2) 애플리케이션 의존성 설치 (devtoolset‑11 활성화)
