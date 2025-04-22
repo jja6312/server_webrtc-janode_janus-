@@ -1,0 +1,97 @@
+name: Node‑Janus CI Pipeline
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    env:
+      APP_NAME: "nodejs-janus-app"
+      NODE_VERSION: "18.19.0"
+      NODE_PREFIX: "/usr/local/node"
+
+    steps:
+    # 1️⃣ 코드 체크아웃
+    - name: Checkout source
+      uses: actions/checkout@v3
+
+    # 2️⃣ Node.js 18.19.0 설치
+    - name: Setup Node
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+
+    # 3️⃣ OS 빌드 툴체인 & 네이티브 라이브러리 설치
+    - name: Install build toolchain & native libs
+      run: |
+        set -euxo pipefail
+
+        sudo apt-get update
+
+        # GCC 11 (devtoolset‑11 대체)
+        sudo apt-get install -y gcc-11 g++-11
+        sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-11 110 \
+                                 --slave /usr/bin/g++ g++ /usr/bin/g++-11
+
+        echo "==> gcc version"
+        gcc -v
+
+        # Janus / Janode가 요구하는 패키지 (Ubuntu naming)
+        sudo apt-get install -y \
+          libmicrohttpd-dev libjansson-dev libssl-dev libsrtp2-dev \
+          libsofia-sip-ua-dev libglib2.0-dev libopus-dev libogg-dev \
+          libcurl4-openssl-dev liblua5.3-dev libconfig-dev pkg-config \
+          gengetopt libtool automake make libmysqlclient-dev libnice-dev
+
+    # 4️⃣ Node 모듈 빌드
+    - name: npm ci (janode)
+      run: |
+        set -euxo pipefail
+        echo "==> node version: $(node -v)"
+        cd media_app/janode
+        npm ci
+
+    # 5️⃣ 아티팩트 패키징
+    - name: Package artifact
+      run: |
+        set -euxo pipefail
+        mkdir -p deployment
+        cp -r media_app deployment/
+        cd deployment
+        tar -czf nodejs-janus-app.tar.gz media_app
+
+    # 6️⃣ GitHub 아티팩트 업로드 (v4 사용!)
+    - name: Upload artifact to GitHub
+      uses: actions/upload-artifact@v4
+      with:
+        name: nodejs-janus-app-artifact
+        path: deployment/nodejs-janus-app.tar.gz
+
+    # 7️⃣ (선택) OCI Object Storage 업로드 — Django 파이프라인과 동일 패턴
+    - name: Upload to OCI Object Storage
+      env:
+        OCI_TENANCY_OCID:   ${{ secrets.OCI_TENANCY_OCID }}
+        OCI_USER_OCID:      ${{ secrets.OCI_USER_OCID }}
+        OCI_FINGERPRINT:    ${{ secrets.OCI_FINGERPRINT }}
+        OCI_REGION:         ${{ secrets.OCI_REGION }}
+        OCI_PRIVATE_KEY:    ${{ secrets.OCI_PRIVATE_KEY }}
+        OCI_BUCKET_NAME:    ${{ secrets.OCI_BUCKET_NAME }}
+      run: |
+        echo "$OCI_PRIVATE_KEY" > oci_api_key.pem
+        chmod 600 oci_api_key.pem
+        mkdir -p ~/.oci
+        printf "[DEFAULT]\nuser=%s\nfingerprint=%s\nkey_file=oci_api_key.pem\ntenancy=%s\nregion=%s\n" \
+          "$OCI_USER_OCID" "$OCI_FINGERPRINT" "$OCI_TENANCY_OCID" "$OCI_REGION" > ~/.oci/config
+        curl -L https://raw.githubusercontent.com/oracle/oci-cli/master/scripts/install/install.sh \
+          | bash -s -- --accept-all-defaults
+        export PATH="$HOME/bin:$PATH"
+        oci os object put \
+          --bucket-name "$OCI_BUCKET_NAME" \
+          --name nodejs-janus-app.tar.gz \
+          --file deployment/nodejs-janus-app.tar.gz \
+          --force
