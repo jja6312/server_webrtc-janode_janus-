@@ -72,26 +72,28 @@ jobs:
         name: nodejs-janus-app-artifact
         path: deployment/nodejs-janus-app.tar.gz
 
-    # 7️⃣ (선택) OCI Object Storage 업로드 — Django 파이프라인과 동일 패턴
-    - name: Upload to OCI Object Storage
+    # 7️⃣ OCI Artifact Registry 업로드 (신규 권장 방식)
+    - name: Upload to OCI Artifact Registry
       env:
         OCI_TENANCY_OCID:   ${{ secrets.OCI_TENANCY_OCID }}
         OCI_USER_OCID:      ${{ secrets.OCI_USER_OCID }}
         OCI_FINGERPRINT:    ${{ secrets.OCI_FINGERPRINT }}
         OCI_REGION:         ${{ secrets.OCI_REGION }}
         OCI_PRIVATE_KEY:    ${{ secrets.OCI_PRIVATE_KEY }}
-        OCI_BUCKET_NAME:    ${{ secrets.OCI_BUCKET_NAME }}
+        OCI_ARTIFACTS_REPOSITORY: ${{ secrets.OCI_ARTIFACTS_REPOSITORY }}
       run: |
         echo "$OCI_PRIVATE_KEY" > oci_api_key.pem
         chmod 600 oci_api_key.pem
         mkdir -p ~/.oci
         printf "[DEFAULT]\nuser=%s\nfingerprint=%s\nkey_file=oci_api_key.pem\ntenancy=%s\nregion=%s\n" \
           "$OCI_USER_OCID" "$OCI_FINGERPRINT" "$OCI_TENANCY_OCID" "$OCI_REGION" > ~/.oci/config
+
         curl -L https://raw.githubusercontent.com/oracle/oci-cli/master/scripts/install/install.sh \
           | bash -s -- --accept-all-defaults
         export PATH="$HOME/bin:$PATH"
-        oci os object put \
-          --bucket-name "$OCI_BUCKET_NAME" \
-          --name nodejs-janus-app.tar.gz \
-          --file deployment/nodejs-janus-app.tar.gz \
-          --force
+
+        oci artifacts generic-artifact upload \
+          --repository-name "$OCI_ARTIFACTS_REPOSITORY" \
+          --artifact-path deployment/nodejs-janus-app.tar.gz \
+          --artifact-display-name nodejs-janus-app.tar.gz \
+          --content-type application/gzip
