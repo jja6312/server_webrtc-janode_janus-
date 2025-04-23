@@ -80,7 +80,7 @@ jobs:
         OCI_FINGERPRINT:    ${{ secrets.OCI_FINGERPRINT }}
         OCI_REGION:         ${{ secrets.OCI_REGION }}
         OCI_PRIVATE_KEY:    ${{ secrets.OCI_PRIVATE_KEY }}
-        OCI_ARTIFACTS_REPOSITORY: ${{ secrets.OCI_ARTIFACTS_REPOSITORY }}
+        OCI_ARTIFACTS_REPOSITORY_ID: ${{ secrets.OCI_ARTIFACTS_REPOSITORY_ID }}
       run: |
         echo "$OCI_PRIVATE_KEY" > oci_api_key.pem
         chmod 600 oci_api_key.pem
@@ -93,7 +93,7 @@ jobs:
         export PATH="$HOME/bin:$PATH"
 
         oci artifacts generic artifact upload-by-path \
-          --repository-name "$OCI_ARTIFACTS_REPOSITORY" \
+          --repository-id "$OCI_ARTIFACTS_REPOSITORY_ID" \
           --artifact-path deployment/nodejs-janus-app.tar.gz \
           --artifact-display-name nodejs-janus-app.tar.gz \
           --content-type application/gzip
