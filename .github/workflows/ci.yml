@@ -95,5 +95,5 @@ jobs:
         oci artifacts generic artifact upload-by-path \
           --repository-id "$OCI_ARTIFACTS_REPOSITORY_ID" \
           --artifact-path deployment/nodejs-janus-app.tar.gz \
-          --artifact-display-name nodejs-janus-app.tar.gz \
+          --display-name nodejs-janus-app.tar.gz \
           --content-type application/gzip
