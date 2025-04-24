@@ -96,7 +96,7 @@ jobs:
           --artifact-version "latest" \
           --content-body nodejs-janus-app.tar.gz
 
-        # 배포 파이프라인 실행
+        # 배포 파이프라인 실행 
         oci devops deployment create-pipeline-deployment \
           --pipeline-id "$DEPLOYMENT_PIPELINE_OCID" \
           --display-name "Deployed from GitHub Actions at $(date +'%Y-%m-%d %H:%M:%S')"
