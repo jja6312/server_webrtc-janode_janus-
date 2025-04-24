@@ -40,3 +40,5 @@ pm2 start server.mjs --name media-server --update-env
 pm2 save
 
 echo "✅ Node-Janus media server deployed & started successfully"
+echo "✅ 배포 완료되었습니다."
+exit 0
