@@ -5,7 +5,7 @@ timeoutInSeconds: 600
 
 files:
   - source: artifact:/nodejs-janus-app.tar.gz
-    destination: /home/ubuntu/deploy_workspace
+    destination: /home/ubuntu/
 
 steps:
   - stepType: Command
@@ -15,6 +15,7 @@ steps:
     command: |
       set -euxo pipefail
       mkdir -p /home/ubuntu/deploy_workspace
+      mv nodejs-janus-app.tar.gz /home/ubuntu/deploy_workspace
       cd /home/ubuntu/deploy_workspace
       tar -xzf nodejs-janus-app.tar.gz
       if [ -f deploy.sh ]; then
