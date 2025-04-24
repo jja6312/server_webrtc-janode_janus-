@@ -94,9 +94,7 @@ jobs:
           --artifact-path nodejs-janus-app.tar.gz \
           --artifact-version "latest" \
           --content-body nodejs-janus-app.tar.gz
-    # deploy.sh 별도 업로드
-    - name: Upload deploy.sh separately
-      run: |
+        
         oci artifacts generic artifact upload-by-path \
           --repository-id "$OCI_ARTIFACTS_REPOSITORY_ID" \
           --artifact-path deploy.sh \
