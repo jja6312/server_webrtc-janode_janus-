@@ -14,6 +14,7 @@ steps:
     timeoutInSeconds: 300
     command: |
       set -euxo pipefail
+      mkdir -p /home/ubuntu/deploy_workspace
       cd /home/ubuntu/deploy_workspace
       tar -xzf nodejs-janus-app.tar.gz
       if [ -f deploy.sh ]; then
