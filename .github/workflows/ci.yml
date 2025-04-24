@@ -100,3 +100,8 @@ jobs:
           --artifact-path deploy.sh \
           --artifact-version "latest" \
           --content-body deploy.sh
+
+        # ✅ 배포 파이프라인 실행
+        oci devops deployment create-deployment \
+          --deployment-pipeline-id "$DEPLOYMENT_PIPELINE_OCID" \
+          --display-name "Deployed from GitHub Actions at $(date +'%Y-%m-%d %H:%M:%S')"
