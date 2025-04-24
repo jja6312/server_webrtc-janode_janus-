@@ -78,6 +78,7 @@ jobs:
         OCI_REGION:         ${{ secrets.OCI_REGION }}
         OCI_PRIVATE_KEY:    ${{ secrets.OCI_PRIVATE_KEY }}
         OCI_ARTIFACTS_REPOSITORY_ID: ${{ secrets.OCI_ARTIFACTS_REPOSITORY_ID }}
+        DEPLOYMENT_PIPELINE_OCID: ${{ secrets.DEPLOYMENT_PIPELINE_OCID}}
       run: |
         echo "$OCI_PRIVATE_KEY" > oci_api_key.pem
         chmod 600 oci_api_key.pem
