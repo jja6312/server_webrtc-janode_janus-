@@ -1,15 +1,20 @@
-version: "0.1"
-component: command
+version: 1.0
+component: deployment
 shell: bash
-timeoutInSeconds: 300
-runAs: root
+timeoutInSeconds: 600
+
+files:
+  - source: artifact:/nodejs-janus-app.tar.gz
+    destination: /home/ubuntu/deploy_workspace
 
 steps:
-  - type: Command
-    name: Extract & Run Deploy
+  - stepType: Command
+    name: Extract and Run Deploy Script
+    runAs: root
+    timeoutInSeconds: 300
     command: |
       set -euxo pipefail
-      mkdir -p /home/ubuntu/deploy_workspace
-      tar -xzf "$OCI_PRIMARY_ARTIFACT_DIR/$OCI_PRIMARY_ARTIFACT_FILE" -C /home/ubuntu/deploy_workspace --strip-components=0
-      chmod +x /home/ubuntu/deploy_workspace/deploy.sh
-      /home/ubuntu/deploy_workspace/deploy.sh
+      cd /home/ubuntu/deploy_workspace
+      tar -xzf nodejs-janus-app.tar.gz
+      chmod +x deploy.sh
+      ./deploy.sh
