@@ -63,7 +63,7 @@ jobs:
         mkdir -p deployment
         cp -r media_app deployment/
         cd deployment
-        tar -czf nodejs-janus-app.tar.gz media_app
+        tar -czf nodejs-janus-app.tar.gz media_app deploy.sh
 
     # 6️⃣ GitHub 아티팩트 업로드 (v4 사용!)
     - name: Upload artifact to GitHub
