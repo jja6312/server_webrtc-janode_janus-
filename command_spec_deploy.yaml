@@ -1,0 +1,44 @@
+version: 1.0
+component: deployment
+shell: bash
+timeoutInSeconds: 600
+
+files:
+  - source: artifact:/nodejs-janus-app.tar.gz
+    destination: .
+
+env:
+  vaultVariables:
+    SSH_PRIVATE_KEY: "ocid1.vaultsecret.oc1.ap-seoul-1.amaaaaaag6flgfiamdcqakx7kvldkheydi3idx7boszg52f2i27bxgxzvvda"
+    TARGET_IP: "ocid1.vaultsecret.oc1.ap-seoul-1.amaaaaaag6flgfiasvbppcezw5g4vnt7a4iyc5tqmviuycsbvgshlpquetda"
+
+steps:
+  - stepType: Command
+    name: Copy and Deploy to Ubuntu
+    runAs: root
+    timeoutInSeconds: 900
+    command: |
+      echo "🚀 Starting remote deployment to Ubuntu"
+      set -euxo pipefail
+
+      # SSH 키 구성
+      echo "$SSH_PRIVATE_KEY" > ssh_key
+      chmod 600 ssh_key
+
+      # 아티팩트 파일 전송
+      scp -i ssh_key -o StrictHostKeyChecking=no \
+        nodejs-janus-app.tar.gz ubuntu@$TARGET_IP:/home/ubuntu/
+
+      # 원격 접속 후 deploy.sh 실행
+      ssh -i ssh_key -o StrictHostKeyChecking=no ubuntu@$TARGET_IP <<'EOF'
+        set -euxo pipefail
+        mkdir -p /home/ubuntu/deploy_workspace
+        mv /home/ubuntu/nodejs-janus-app.tar.gz /home/ubuntu/deploy_workspace
+        cd /home/ubuntu/deploy_workspace
+        tar -xzf nodejs-janus-app.tar.gz
+        chmod +x deploy.sh
+        ./deploy.sh
+      EOF
+
+      # 키 삭제 (보안상)
+      rm -f ssh_key

@@ -13,16 +13,11 @@ steps:
     runAs: ubuntu
     timeoutInSeconds: 300
     command: |
-      echo "✅ Deploy step started !"
+      echo "Deploy step started!"
       set -euxo pipefail
       mkdir -p /home/ubuntu/deploy_workspace
       mv nodejs-janus-app.tar.gz /home/ubuntu/deploy_workspace
       cd /home/ubuntu/deploy_workspace
       tar -xzf nodejs-janus-app.tar.gz
-      if [ -f deploy.sh ]; then
-        chmod +x deploy.sh
-        ./deploy.sh
-      else
-        echo "❌ deploy.sh not found!"
-        exit 1
-      fi
+      chmod +x deploy.sh
+      ./deploy.sh
