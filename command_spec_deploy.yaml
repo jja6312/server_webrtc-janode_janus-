@@ -1,11 +1,11 @@
 version: 1.0
 component: deployment
 shell: bash
-timeoutInSeconds: 600
+timeoutInSeconds: 900
 
-files:
-  - source: artifact:/nodejs-janus-app.tar.gz
-    destination: .
+inputArtifacts:
+  - name: nodejs-janus-app
+    location: .
 
 env:
   vaultVariables:
@@ -21,15 +21,12 @@ steps:
       echo "🚀 Starting remote deployment to Ubuntu"
       set -euxo pipefail
 
-      # SSH 키 구성
       echo "$SSH_PRIVATE_KEY" > ssh_key
       chmod 600 ssh_key
 
-      # 아티팩트 파일 전송
       scp -i ssh_key -o StrictHostKeyChecking=no \
         nodejs-janus-app.tar.gz ubuntu@$TARGET_IP:/home/ubuntu/
 
-      # 원격 접속 후 deploy.sh 실행
       ssh -i ssh_key -o StrictHostKeyChecking=no ubuntu@$TARGET_IP <<'EOF'
         set -euxo pipefail
         mkdir -p /home/ubuntu/deploy_workspace
@@ -40,5 +37,4 @@ steps:
         ./deploy.sh
       EOF
 
-      # 키 삭제 (보안상)
       rm -f ssh_key
