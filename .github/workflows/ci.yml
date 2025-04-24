@@ -60,9 +60,6 @@ jobs:
     - name: Package artifact
       run: |
         set -euxo pipefail
-        mkdir -p deployment
-        cp -r media_app deployment/
-        cd deployment
         tar -czf nodejs-janus-app.tar.gz media_app deploy.sh
 
     # 6️⃣ GitHub 아티팩트 업로드 (v4 사용!)
@@ -70,7 +67,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: nodejs-janus-app-artifact
-        path: deployment/nodejs-janus-app.tar.gz
+        path: nodejs-janus-app.tar.gz
 
     # 7️⃣ OCI Artifact Registry 업로드 (신규 권장 방식)
     - name: Upload to OCI Artifact Registry
@@ -96,4 +93,4 @@ jobs:
           --repository-id "$OCI_ARTIFACTS_REPOSITORY_ID" \
           --artifact-path nodejs-janus-app.tar.gz \
           --artifact-version "latest" \
-          --content-body deployment/nodejs-janus-app.tar.gz
+          --content-body nodejs-janus-app.tar.gz
