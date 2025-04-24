@@ -4,7 +4,7 @@ shell: bash
 timeoutInSeconds: 600
 
 files:
-  - source: artifact:/media-artifacts
+  - source: artifact:/media-artifacts@nodejs-janus-app.tar.gz
     destination: /home/ubuntu/
 
 steps:
