@@ -1,15 +1,15 @@
-schemaVersion: "1.0"
+version: "0.1"
+component: command
+shell: bash
+timeoutInSeconds: 300
+runAs: root
+
 steps:
   - type: Command
-    name: Extract tar.gz
-    timeoutInSeconds: 60
+    name: Extract & Run Deploy
     command: |
+      set -euxo pipefail
       mkdir -p /home/ubuntu/deploy_workspace
-      tar -xzf ${OCI_PRIMARY_ARTIFACT_FILE} -C /home/ubuntu/deploy_workspace --strip-components=0
-
-  - type: Command
-    name: Execute deploy.sh
-    timeoutInSeconds: 180
-    command: |
+      tar -xzf "$OCI_PRIMARY_ARTIFACT_DIR/$OCI_PRIMARY_ARTIFACT_FILE" -C /home/ubuntu/deploy_workspace --strip-components=0
       chmod +x /home/ubuntu/deploy_workspace/deploy.sh
       /home/ubuntu/deploy_workspace/deploy.sh
